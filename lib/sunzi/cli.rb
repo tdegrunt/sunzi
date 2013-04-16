@@ -98,7 +98,9 @@ module Sunzi
         # Check if you're in the sunzi directory
         abort_with 'You must be in the sunzi folder' unless File.exists?('sunzi.yml')
         # Check if role exists
-        abort_with "#{role} doesn't exist!" if role and !File.exists?("roles/#{role}.sh")
+        role.split(',').each do |r|
+          abort_with "#{r} doesn't exist!" if !File.exists?("roles/#{r}.sh")
+        end if role
 
         # Load sunzi.yml
         @config = YAML.load(File.read('sunzi.yml'))
@@ -125,7 +127,11 @@ module Sunzi
         if role
           if copy_or_template == :template
             template File.expand_path('install.sh'), 'compiled/_install.sh'
-            create_file 'compiled/install.sh', File.binread('compiled/_install.sh') << "\n" << File.binread("compiled/roles/#{role}.sh")
+            combined_content = File.binread('compiled/_install.sh') << "\n"
+            role.split(',').each do |r|
+              combined_content << File.binread("compiled/roles/#{r}.sh")
+            end
+            create_file 'compiled/install.sh', combined_content
           else
             create_file 'compiled/install.sh', File.binread('install.sh') << "\n" << File.binread("roles/#{role}.sh")
           end
